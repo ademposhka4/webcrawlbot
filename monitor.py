@@ -22,9 +22,10 @@ from pathlib import Path
 # ----------------------------
 STATE_PATH = Path("state/seen.json")
 
-# Add lowercase company names here to suppress alerts for them.
+# Add blocked company names here to suppress alerts for them.
 BLOCKED_COMPANIES: set[str] = {
-    # "example company",
+    "Lensa",
+    "Jobs via Dice"
 }
 
 def load_seen_jobs() -> set[str]:
@@ -76,11 +77,6 @@ def stable_job_key(job_id: str | None, link: str | None) -> str | None:
         h = hashlib.sha256(link.encode("utf-8")).hexdigest()[:24]
         return f"linkhash:{h}"
     return None
-
-def normalize_company(name: str | None) -> str | None:
-    if not name:
-        return None
-    return re.sub(r"\s+", " ", name).strip().lower()
 
 def small_jitter_sleep(min_s=5, max_s=45):
     """Avoid hitting the site at exact clock boundaries."""
@@ -169,13 +165,7 @@ def scrape_jobs():
             if not key:
                 continue
 
-            if key in seenJobs:
-                continue
-
-            normalized_company = normalize_company(company)
-            if normalized_company and normalized_company in BLOCKED_COMPANIES:
-                # still mark as seen to reduce re-processing noise
-                seenJobs.add(key)
+            if key in seenJobs or company in BLOCKED_COMPANIES:
                 continue
 
             # Optional: light filter — only alert if "Intern" in title (you mentioned this)
